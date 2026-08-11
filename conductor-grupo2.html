@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del Conductor – Grupo 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d2340;--blue:#1a4a7a;--sky:#2e7fce;--gold:#c8963e;
+  --cream:#f7f3ed;--white:#ffffff;--ink:#1c1c1c;--border:#d1c9be;
+  --input-bg:#fdfbf8;--green:#0f7a3e;--red:#dc2626;--muted:#6b7280;
+}
+[data-theme="dark"] {
+  --navy:#0a1a2e;--blue:#1a3a5c;--sky:#4a9ede;--gold:#d4a04a;
+  --cream:#0b1520;--white:#1a2535;--ink:#e8edf3;--border:#2e4060;
+  --input-bg:#162030;--muted:#8fa3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:100vh;padding:1.5rem 1rem 3rem;}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+.login-box{background:var(--white);border-radius:8px;padding:2.5rem 2rem;max-width:360px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(13,35,64,.15);}
+.login-box h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:.5rem;}
+.login-box p{color:var(--muted);font-size:.9rem;margin-bottom:1.5rem;}
+.login-box input{width:100%;padding:.7rem 1rem;border:1.5px solid var(--border);border-radius:4px;font-size:1rem;background:var(--input-bg);color:var(--ink);margin-bottom:1rem;outline:none;font-family:inherit;}
+.login-box input:focus{border-color:var(--sky);}
+.btn-login{width:100%;background:var(--navy);color:white;border:none;padding:.75rem;border-radius:4px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s;}
+.btn-login:hover{opacity:.85;}
+.login-error{color:var(--red);font-size:.82rem;margin-top:.5rem;display:none;}
+
+/* Dashboard */
+.dashboard{display:none;max-width:800px;margin:0 auto;}
+.dash-header{background:var(--navy);border-radius:8px 8px 0 0;padding:1.5rem 2rem;color:white;position:relative;}
+.dash-header h1{font-family:'Playfair Display',serif;font-size:1.5rem;}
+.dash-header p{font-size:.85rem;opacity:.6;margin-top:.3rem;}
+.dash-stripe{height:4px;background:linear-gradient(90deg,var(--gold),var(--sky),var(--blue));}
+.dark-toggle{position:absolute;top:1rem;right:1.2rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;border-radius:20px;padding:.3rem .85rem;font-size:.8rem;cursor:pointer;font-family:inherit;}
+
+/* Tabs */
+.tabs{display:flex;background:var(--white);border-left:1px solid var(--border);border-right:1px solid var(--border);overflow-x:auto;gap:0;}
+.tab{padding:.7rem 1.2rem;font-size:.85rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);white-space:nowrap;transition:all .18s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;}
+.tab.active{color:var(--sky);border-bottom-color:var(--sky);}
+.tab:hover:not(.active){color:var(--ink);}
+
+/* Progress */
+.progress-card{background:var(--white);padding:1.3rem 2rem;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+.progress-row{display:flex;align-items:center;gap:1rem;margin-bottom:.6rem;}
+.progress-nums{font-size:1.8rem;font-weight:700;color:var(--navy);min-width:80px;}
+[data-theme="dark"] .progress-nums{color:var(--ink);}
+.progress-nums span{font-size:.9rem;font-weight:400;color:var(--muted);}
+.bar-track{flex:1;background:var(--border);border-radius:20px;height:12px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--sky),var(--green));transition:width .6s ease;}
+.progress-label{font-size:.82rem;color:var(--muted);}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border-left:1px solid var(--border);border-right:1px solid var(--border);border-top:1px solid var(--border);}
+.stat-card{padding:.9rem 1rem;text-align:center;border-right:1px solid var(--border);}
+.stat-card:last-child{border-right:none;}
+.stat-value{font-size:1.5rem;font-weight:700;color:var(--navy);line-height:1.1;}
+[data-theme="dark"] .stat-value{color:var(--ink);}
+.stat-label{font-size:.68rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:.2rem;}
+
+/* Chart */
+.chart-card{background:var(--white);padding:1.2rem 1.5rem;border-left:1px solid var(--border);border-right:1px solid var(--border);border-top:1px solid var(--border);}
+.chart-title{font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem;}
+.bar-chart{display:flex;flex-direction:column;gap:.45rem;}
+.bar-row{display:flex;align-items:center;gap:.6rem;}
+.bar-name{font-size:.75rem;color:var(--ink);min-width:120px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-outer{flex:1;background:var(--border);border-radius:4px;height:16px;overflow:hidden;}
+.bar-inner{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--sky),var(--blue));transition:width .5s ease;min-width:2px;}
+.bar-val{font-size:.75rem;font-weight:600;color:var(--ink);min-width:28px;}
+
+/* Actions */
+.actions{display:flex;gap:.6rem;align-items:center;padding:.75rem 1.5rem;background:var(--white);border-left:1px solid var(--border);border-right:1px solid var(--border);border-top:1px solid var(--border);flex-wrap:wrap;}
+.btn-action{background:var(--sky);color:white;border:none;padding:.45rem 1rem;border-radius:4px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .18s;}
+.btn-action:hover{opacity:.85;}
+.btn-pdf{background:var(--red);}
+.last-update{font-size:.75rem;color:var(--muted);margin-left:auto;}
+
+/* Name grid */
+.name-grid{background:var(--white);padding:1rem 1.5rem 1.5rem;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.5rem;}
+.name-card{display:flex;align-items:center;gap:.55rem;padding:.55rem .7rem;border-radius:4px;border:1.5px solid var(--border);font-size:.86rem;}
+.name-card.enviado{border-color:#86efac;background:#f0fdf4;}
+.name-card.pendiente{border-color:#fca5a5;background:#fff5f5;}
+[data-theme="dark"] .name-card.enviado{border-color:#166534;background:#052e16;}
+[data-theme="dark"] .name-card.pendiente{border-color:#7f1d1d;background:#1f0a0a;}
+.status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.enviado .status-dot{background:var(--green);}
+.pendiente .status-dot{background:var(--red);}
+.name-text{flex:1;color:var(--ink);font-weight:500;}
+.name-time{font-size:.7rem;color:var(--muted);}
+
+/* Loading */
+.loading{text-align:center;padding:2rem;color:var(--muted);font-size:.9rem;}
+.spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .75rem;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media(max-width:540px){
+  .name-grid{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .bar-name{min-width:80px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">🔐</div>
+    <h2>Panel del Conductor</h2>
+    <p>Ingresa la contraseña para ver el estado de los informes</p>
+    <input type="password" id="pwd-input" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn-login" onclick="login()">Entrar</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta.</div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard" id="dashboard">
+  <div class="dash-header">
+    <button class="dark-toggle" onclick="toggleDark()" id="dark-btn">🌙 Oscuro</button>
+    <h1>Panel del Conductor</h1>
+    <p id="dash-sub">Grupo 2 · Cargando…</p>
+  </div>
+  <div class="dash-stripe"></div>
+
+  <!-- Tabs meses -->
+  <div class="tabs" id="tabs-meses"></div>
+
+  <!-- Progreso -->
+  <div class="progress-card">
+    <div class="progress-row">
+      <div class="progress-nums" id="prog-nums">0 <span>/ 15</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill" style="width:0%"></div></div>
+    </div>
+    <div class="progress-label" id="prog-label">Cargando datos…</div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total horas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-prom">—</div>
+      <div class="stat-label">Promedio</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-prec">—</div>
+      <div class="stat-label">Precursores</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-cursos">—</div>
+      <div class="stat-label">Cursos bíblicos</div>
+    </div>
+  </div>
+
+  <!-- Gráfica de horas -->
+  <div class="chart-card">
+    <div class="chart-title">⏱ Horas por publicador</div>
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="actions">
+    <button class="btn-action" onclick="cargarDatos()">🔄 Actualizar</button>
+    <button class="btn-action btn-pdf" onclick="exportarPDF()">📄 Exportar PDF</button>
+    <span class="last-update" id="last-update"></span>
+  </div>
+
+  <!-- Lista de publicadores -->
+  <div class="name-grid" id="name-grid">
+    <div class="loading"><div class="spinner"></div>Cargando informes…</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzLQ-xwdDUoBE0lm-2W3cxaK1NuJwSZZrPLqefDbiQd-ZcPca4vvY-RaLYx_PlAqRRoHQ/exec';
+const PASSWORD   = 'grupo2';
+
+let datosActuales = [];
+let mesActual     = '';
+let tabActiva     = 0;
+
+// ── Dark mode ─────────────────────────────────────────────────
+function toggleDark() {
+  const html = document.documentElement;
+  const dark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', dark ? 'light' : 'dark');
+  document.getElementById('dark-btn').textContent = dark ? '🌙 Oscuro' : '☀ Claro';
+  localStorage.setItem('tema-conductor', dark ? 'light' : 'dark');
+}
+(function(){
+  if(localStorage.getItem('tema-conductor')==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.addEventListener('DOMContentLoaded',()=>{
+      const b=document.getElementById('dark-btn');
+      if(b) b.textContent='☀ Claro';
+    });
+  }
+})();
+
+// ── Login ──────────────────────────────────────────────────────
+function login() {
+  if(document.getElementById('pwd-input').value === PASSWORD){
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    cargarDatos();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('pwd-input').style.borderColor='#dc2626';
+  }
+}
+
+// ── Cargar datos ───────────────────────────────────────────────
+async function cargarDatos() {
+  document.getElementById('name-grid').innerHTML=
+    '<div class="loading"><div class="spinner"></div>Cargando informes…</div>';
+
+  try {
+    const res  = await fetch(SHEETS_URL + '?action=status');
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'Error');
+
+    const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    mesActual = json.mes || meses[new Date().getMonth()];
+
+    // ── Tabs de historial ──
+    renderTabs(json.historial || [], mesActual);
+
+    // ── Renderizar mes activo ──
+    datosActuales = json.publicadores;
+    renderDatos(json.publicadores, mesActual);
+
+    document.getElementById('last-update').textContent =
+      'Actualizado: ' + new Date().toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'});
+
+  } catch(err) {
+    document.getElementById('name-grid').innerHTML=
+      `<div class="loading" style="color:#dc2626">⚠ ${err.message}</div>`;
+  }
+}
+
+// ── Render tabs ────────────────────────────────────────────────
+function renderTabs(historial, mesActivo) {
+  const cont = document.getElementById('tabs-meses');
+  cont.innerHTML = '';
+
+  // Tab mes actual
+  const t0 = document.createElement('button');
+  t0.className = 'tab' + (tabActiva===0 ? ' active' : '');
+  t0.textContent = '📋 ' + mesActivo;
+  t0.onclick = () => { tabActiva=0; setTabActive(0); renderDatos(datosActuales, mesActivo); };
+  cont.appendChild(t0);
+
+  // Tabs historial
+  historial.forEach((h, i) => {
+    const t = document.createElement('button');
+    t.className = 'tab' + (tabActiva===(i+1) ? ' active' : '');
+    t.textContent = '📁 ' + h.mes;
+    t.onclick = () => { tabActiva=i+1; setTabActive(i+1); renderDatos(h.publicadores, h.mes); };
+    cont.appendChild(t);
+  });
+}
+
+function setTabActive(idx) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+}
+
+// ── Render datos ───────────────────────────────────────────────
+function renderDatos(publicadores, mes) {
+  document.getElementById('dash-sub').textContent = 'Grupo 2 · ' + mes;
+
+  const total    = publicadores.length;
+  const enviados = publicadores.filter(p => p.enviado).length;
+  const pct      = total ? Math.round((enviados/total)*100) : 0;
+
+  document.getElementById('prog-nums').innerHTML = `${enviados} <span>/ ${total}</span>`;
+  document.getElementById('bar-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent =
+    pct===100 ? '✅ ¡Todos los informes están completos!'
+              : `Faltan ${total-enviados} informe${total-enviados!==1?'s':''} por entregar`;
+
+  // Estadísticas
+  const conHoras   = publicadores.filter(p => p.horas && parseFloat(p.horas)>0);
+  const totalHoras = conHoras.reduce((s,p) => s+parseFloat(p.horas), 0);
+  const promedio   = conHoras.length ? (totalHoras/conHoras.length).toFixed(1) : 0;
+  const precursores= publicadores.filter(p => p.auxiliar==='X'||p.regular==='X'||p.especial==='X').length;
+  const cursos     = publicadores.reduce((s,p) => s+(parseFloat(p.cursos)||0), 0);
+
+  document.getElementById('stat-total').textContent  = totalHoras || '—';
+  document.getElementById('stat-prom').textContent   = promedio>0 ? promedio : '—';
+  document.getElementById('stat-prec').textContent   = precursores || '—';
+  document.getElementById('stat-cursos').textContent = cursos || '—';
+
+  // Gráfica de barras
+  const chart = document.getElementById('bar-chart');
+  const conH = publicadores.filter(p => p.horas && parseFloat(p.horas)>0)
+                            .sort((a,b) => parseFloat(b.horas)-parseFloat(a.horas));
+  const maxH = conH.length ? parseFloat(conH[0].horas) : 1;
+
+  if(conH.length===0){
+    chart.innerHTML = '<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:.5rem">Sin horas registradas aún</div>';
+  } else {
+    chart.innerHTML = conH.map(p => {
+      const pct = Math.round((parseFloat(p.horas)/maxH)*100);
+      const nombre = p.nombre.split(',')[1]?.trim().split(' ')[0] || p.nombre.split(',')[0];
+      return `<div class="bar-row">
+        <div class="bar-name" title="${p.nombre}">${nombre}</div>
+        <div class="bar-outer"><div class="bar-inner" style="width:${pct}%"></div></div>
+        <div class="bar-val">${p.horas}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Lista publicadores
+  const grid = document.getElementById('name-grid');
+  grid.innerHTML = '';
+  [...publicadores].sort((a,b)=>a.enviado-b.enviado).forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'name-card '+(p.enviado?'enviado':'pendiente');
+    card.innerHTML = `
+      <div class="status-dot"></div>
+      <div style="flex:1">
+        <div class="name-text">${p.nombre}</div>
+        ${p.enviado && p.fecha  ? `<div class="name-time">📅 ${p.fecha}</div>`  : ''}
+        ${p.enviado && p.horas  ? `<div class="name-time">⏱ ${p.horas} h</div>` : ''}
+      </div>
+      <div style="font-size:.9rem">${p.enviado?'✅':'⏳'}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── Exportar PDF ───────────────────────────────────────────────
+function exportarPDF() {
+  if(typeof window.jspdf === 'undefined'){
+    alert('Cargando librería PDF, intenta en 2 segundos…'); return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'letter' });
+
+  const mes  = document.getElementById('dash-sub').textContent;
+  const envN = document.getElementById('prog-nums').textContent.trim();
+  const tot  = document.getElementById('stat-total').textContent;
+  const prom = document.getElementById('stat-prom').textContent;
+  const prec = document.getElementById('stat-prec').textContent;
+  const cur  = document.getElementById('stat-cursos').textContent;
+
+  // Header
+  doc.setFillColor(13,35,64);
+  doc.rect(0,0,216,28,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text('INFORME DE GRUPO DE PREDICACIÓN', 108, 11, {align:'center'});
+  doc.setFontSize(10);
+  doc.setFont('helvetica','normal');
+  doc.text(mes, 108, 20, {align:'center'});
+
+  // Stripe
+  doc.setFillColor(200,150,62);
+  doc.rect(0,28,72,3,'F');
+  doc.setFillColor(46,127,206);
+  doc.rect(72,28,72,3,'F');
+  doc.setFillColor(26,74,122);
+  doc.rect(144,28,72,3,'F');
+
+  // Stats boxes
+  doc.setTextColor(13,35,64);
+  const stats = [
+    ['Total horas', tot], ['Promedio', prom],
+    ['Precursores', prec], ['Cursos', cur]
+  ];
+  stats.forEach((s,i)=>{
+    const x=14+(i*49);
+    doc.setFillColor(247,243,237);
+    doc.roundedRect(x,36,45,20,2,2,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(13,35,64);
+    doc.text(s[1]==='—'?'0':s[1], x+22.5, 46, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(107,114,128);
+    doc.text(s[0].toUpperCase(), x+22.5, 52, {align:'center'});
+  });
+
+  // Progreso
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,35,64);
+  doc.text('INFORMES RECIBIDOS', 14, 65);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(107,114,128);
+  doc.text(envN, 200, 65, {align:'right'});
+  doc.setFillColor(209,201,190);
+  doc.roundedRect(14, 67, 186, 5, 2, 2, 'F');
+  const pctN = parseInt(envN) / parseInt(envN.split('/')[1]) * 100 || 0;
+  doc.setFillColor(46,127,206);
+  doc.roundedRect(14, 67, 186*(pctN/100)||2, 5, 2, 2, 'F');
+
+  // Tabla
+  let y = 82;
+  doc.setFillColor(13,35,64);
+  doc.rect(14,y,186,7,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+  doc.text('NOMBRE',16,y+4.5);
+  doc.text('SI',90,y+4.5,{align:'center'});
+  doc.text('NO',103,y+4.5,{align:'center'});
+  doc.text('HORAS',116,y+4.5,{align:'center'});
+  doc.text('CURSOS',130,y+4.5,{align:'center'});
+  doc.text('TIPO',148,y+4.5,{align:'center'});
+  doc.text('FECHA ENVÍO',185,y+4.5,{align:'right'});
+  y+=7;
+
+  const todos = datosActuales.length ? datosActuales
+              : Array.from(document.querySelectorAll('.name-card')).map(c=>({
+                  nombre: c.querySelector('.name-text')?.textContent||'',
+                  enviado: c.classList.contains('enviado')
+                }));
+
+  todos.forEach((p,i)=>{
+    doc.setFillColor(i%2===0 ? 255:247,i%2===0 ? 255:243,i%2===0 ? 255:237);
+    doc.rect(14,y,186,7,'F');
+    doc.setTextColor(28,28,28); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    doc.text(p.nombre||'',16,y+4.5);
+    doc.text(p.si||'',90,y+4.5,{align:'center'});
+    doc.text(p.no||'',103,y+4.5,{align:'center'});
+    doc.text(p.horas||'',116,y+4.5,{align:'center'});
+    doc.text(String(p.cursos||''),130,y+4.5,{align:'center'});
+    const tipo = p.especial==='X'?'ESP':p.regular==='X'?'REG':p.auxiliar==='X'?'AUX':'';
+    doc.text(tipo,148,y+4.5,{align:'center'});
+    doc.text(p.fecha||'',185,y+4.5,{align:'right'});
+    y+=7;
+    if(y>255){ doc.addPage(); y=20; }
+  });
+
+  // Footer
+  doc.setFillColor(13,35,64);
+  doc.rect(0,272,216,14,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+  doc.text('Generado el '+new Date().toLocaleDateString('es-GT')+' · Sistema de informes Grupo 2', 108,280,{align:'center'});
+
+  doc.save('Informe_'+mesActual.replace(/\s/g,'_')+'.pdf');
+}
+</script>
+</body>
+</html>
