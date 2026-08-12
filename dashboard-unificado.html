@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Unificado — Congregación</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d2340;--blue:#1a4a7a;--sky:#2e7fce;--gold:#c8963e;
+  --cream:#f7f3ed;--white:#ffffff;--ink:#1c1c1c;--border:#d1c9be;
+  --input-bg:#fdfbf8;--green:#0f7a3e;--red:#dc2626;--muted:#6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:100vh;padding:1.5rem 1rem 3rem;}
+.wrap{max-width:1080px;margin:0 auto;}
+
+.header{background:var(--navy);border-radius:8px 8px 0 0;padding:1.7rem 2.2rem 1.4rem;color:#fff;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0,transparent 18px,rgba(255,255,255,.03) 18px,rgba(255,255,255,.03) 19px);}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;}
+.header-badge{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(200,150,62,.4);padding:.25rem .75rem;border-radius:2px;margin-bottom:.8rem;}
+.header h1{font-family:'Playfair Display',serif;font-size:clamp(1.3rem,4vw,1.8rem);font-weight:900;letter-spacing:-.01em;}
+.header p{margin-top:.5rem;font-size:.88rem;color:rgba(255,255,255,.6);font-weight:300;}
+.btn-refresh{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:.45rem 1.1rem;font-size:.82rem;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-refresh:hover{background:rgba(255,255,255,.2);}
+.stripe{height:4px;background:linear-gradient(90deg,var(--gold) 0%,var(--sky) 60%,var(--blue) 100%);}
+
+.section{background:var(--white);padding:1.5rem 2.2rem;border-left:1px solid var(--border);border-right:1px solid var(--border);border-top:1px solid var(--border);}
+.section:last-of-type{border-bottom:1px solid var(--border);border-radius:0 0 8px 8px;}
+.section-title{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.8rem;}
+.kpi{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:1rem .8rem;text-align:center;}
+.kpi .num{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;color:var(--navy);line-height:1.1;}
+.kpi .lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:.3rem;font-weight:600;}
+.kpi.accent .num{color:var(--sky);}
+
+/* Progress general */
+.progress-big{display:flex;align-items:center;gap:1.2rem;margin-bottom:.3rem;}
+.progress-nums{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:var(--navy);min-width:110px;}
+.progress-nums span{font-size:1rem;font-weight:400;color:var(--muted);}
+.bar-track-big{flex:1;background:var(--border);border-radius:20px;height:16px;overflow:hidden;}
+.bar-fill-big{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--sky),var(--green));transition:width .6s ease;}
+.progress-sub{font-size:.85rem;color:var(--muted);margin-top:.3rem;}
+
+/* Grupos comparación */
+.grupo-bars{display:flex;flex-direction:column;gap:.65rem;}
+.gbar-row{display:grid;grid-template-columns:110px 1fr 70px;align-items:center;gap:.8rem;}
+.gbar-label{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:600;}
+.gbar-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;font-size:.85rem;flex:none;}
+.gbar-track{background:#eee6da;border-radius:5px;height:14px;overflow:hidden;}
+.gbar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--gold),var(--sky));}
+.gbar-fill.low{background:linear-gradient(90deg,#e08a8a,var(--red));}
+.gbar-val{font-family:monospace;font-size:.82rem;text-align:right;color:var(--ink);}
+
+/* Precursores */
+.prec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;}
+.prec-card{border:1.5px solid var(--border);border-radius:8px;padding:1.1rem;text-align:center;background:var(--input-bg);}
+.prec-icon{font-size:1.6rem;margin-bottom:.3rem;}
+.prec-num{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--navy);}
+.prec-lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-top:.15rem;}
+
+/* Leaderboard */
+.leader-list{display:flex;flex-direction:column;gap:.4rem;}
+.leader-row{display:grid;grid-template-columns:28px 1fr auto auto;align-items:center;gap:.7rem;padding:.5rem .3rem;border-bottom:1px solid #f0ece2;}
+.leader-rank{font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:.95rem;}
+.leader-name{font-size:.88rem;}
+.leader-grupo{background:var(--sky);color:#fff;font-size:.68rem;font-weight:700;border-radius:4px;padding:.15rem .5rem;}
+.leader-horas{font-family:monospace;font-weight:700;color:var(--navy);}
+
+/* Pendientes */
+.pend-groups{display:flex;flex-direction:column;gap:.7rem;}
+.pend-row{display:flex;align-items:flex-start;gap:.7rem;}
+.pend-badge{width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;font-size:.85rem;flex:none;margin-top:.1rem;}
+.pend-names{font-size:.82rem;color:var(--ink);line-height:1.5;}
+.pend-names b{color:var(--navy);}
+.all-done{color:var(--green);font-weight:600;font-size:.88rem;}
+
+.footer-note{padding:1rem 2.2rem;background:var(--navy);color:rgba(255,255,255,.5);font-size:.78rem;text-align:center;font-weight:300;}
+
+/* Selector de mes */
+.mes-selector{display:flex;align-items:center;gap:.6rem;margin-top:.9rem;flex-wrap:wrap;}
+.mes-selector label{font-size:.78rem;color:rgba(255,255,255,.65);}
+.mes-selector select{
+  background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);
+  border-radius:6px;padding:.4rem .7rem;font-size:.82rem;font-family:inherit;
+}
+.mes-selector select option{color:var(--ink);}
+.fuente-tag{font-size:.68rem;background:rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:.2rem .6rem;font-weight:600;}
+
+.setup-banner{background:#fff8ec;border:1.5px solid var(--gold);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:.88rem;}
+.setup-banner strong{display:block;margin-bottom:.4rem;font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);}
+.setup-banner .row{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;}
+.setup-banner input{flex:1;min-width:220px;padding:.55rem .7rem;border:1px solid var(--border);border-radius:4px;font-size:.8rem;font-family:monospace;}
+.setup-banner button{background:var(--navy);color:#fff;border:none;border-radius:4px;padding:.55rem 1.1rem;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* Fichas de publicador */
+.ficha-controls{display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap;}
+.ficha-search{flex:1;min-width:180px;padding:.55rem .8rem;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;background:var(--input-bg);}
+.ficha-filter{display:flex;gap:.3rem;flex-wrap:wrap;}
+.ficha-filter button{border:1.5px solid var(--border);background:var(--white);color:var(--muted);border-radius:20px;padding:.4rem .85rem;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;}
+.ficha-filter button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.ficha-count{font-size:.8rem;color:var(--muted);margin-bottom:.8rem;}
+.ficha-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.7rem;}
+.ficha{border:1.5px solid var(--border);border-radius:8px;padding:.85rem .95rem;background:var(--input-bg);}
+.ficha.enviado{border-color:#86efac;background:#f6fdf8;}
+.ficha.pendiente{border-color:#fca5a5;background:#fff7f7;}
+.ficha-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
+.ficha-nombre{font-size:.9rem;font-weight:700;color:var(--ink);line-height:1.25;}
+.ficha-grupo-badge{background:var(--sky);color:#fff;font-size:.66rem;font-weight:700;border-radius:4px;padding:.15rem .45rem;flex:none;}
+.ficha-estado{font-size:.72rem;font-weight:700;display:inline-flex;align-items:center;gap:.3rem;margin-bottom:.4rem;}
+.ficha-estado.si{color:var(--green);}
+.ficha-estado.no{color:var(--red);}
+.ficha-datos{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem;}
+.ficha-chip{font-size:.68rem;background:#fff;border:1px solid var(--border);border-radius:4px;padding:.15rem .45rem;color:var(--ink);}
+.ficha-chip.tipo{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:700;}
+.ficha-obs{font-size:.72rem;color:var(--muted);margin-top:.5rem;font-style:italic;line-height:1.4;}
+.ficha-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:1.5rem;font-size:.85rem;}
+
+.loading{text-align:center;padding:2.5rem;color:var(--muted);}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .8rem;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media(max-width:760px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr);}
+  .prec-grid{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .section{padding:1.2rem 1.3rem;}
+  .progress-nums{font-size:1.6rem;min-width:80px;}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-badge">Congregación</div>
+        <h1>Dashboard Unificado</h1>
+        <p id="headerSub">Cargando los 6 grupos…</p>
+      </div>
+      <button class="btn-refresh" id="btnRefresh">🔄 Actualizar</button>
+    </div>
+    <div class="mes-selector" id="mesSelectorWrap" style="display:none;">
+      <label>📅 Ver:</label>
+      <select id="mesSelector">
+        <option value="">En vivo (los 6 grupos)</option>
+      </select>
+      <span class="fuente-tag" id="fuenteTag">En vivo</span>
+    </div>
+  </div>
+  <div class="stripe"></div>
+
+  <div class="section" id="setupCard" style="display:none;">
+    <div class="setup-banner">
+      <strong>Conecta el informe unificado para ver meses anteriores</strong>
+      Pega aquí la URL del Apps Script del informe unificado (la misma que usas en informe-unificado.html) para poder elegir cualquier mes archivado. Sin esto, el dashboard solo muestra la vista en vivo de los 6 grupos.
+      <div class="row">
+        <input type="text" id="unifUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+        <button id="unifUrlSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="section"><div class="loading"><div class="spinner"></div>Cargando datos de los 6 grupos…</div></div>
+  </div>
+
+  <div class="footer-note">Sistema de informes · Congregación · Actualizado en tiempo real desde los 6 grupos</div>
+</div>
+
+<script>
+const GRUPOS_URLS = {
+  1: 'https://script.google.com/macros/s/AKfycbx8sK39lJ0EVV0skzoXDG4dfFoHf2M8RyW2kI3f0L0zwr8qNdQKxle_10r7HZ_elH-HAg/exec',
+  2: 'https://script.google.com/macros/s/AKfycbzLQ-xwdDUoBE0lm-2W3cxaK1NuJwSZZrPLqefDbiQd-ZcPca4vvY-RaLYx_PlAqRRoHQ/exec',
+  3: 'https://script.google.com/macros/s/AKfycbzRD9KVD4_N1HB6Fis5fTP_kie7tr7hInxJnnn8ogZoq-MD2YHhkMv_NCmXSby5tMe1/exec',
+  4: 'https://script.google.com/macros/s/AKfycbyZ7i77lZi8v6q1H_jrtiYssYb7IuxsTLcM9h60q3nu9G_P_TQUKUEw7D52YzrkzXHj/exec',
+  5: 'https://script.google.com/macros/s/AKfycbySDhJAM9XUfmpNCLtfaikf-sOSxWmbj-Vvlb_bKGny77W5Sse_jARFGFrR4vpTJaFaUw/exec',
+  6: 'https://script.google.com/macros/s/AKfycbzBkPDIz7YMKatcAMGmqEzw-HPS_6-mI8ChlUszNa4UNtWy9GsQNzNsGf81LLB7aSZD/exec'
+};
+
+const UNIF_KEY = 'informe_unificado_url';
+function getUnifUrl(){ return localStorage.getItem(UNIF_KEY) || ''; }
+function setUnifUrl(v){ localStorage.setItem(UNIF_KEY, v.trim()); }
+
+function pct(part, total){ return total>0 ? Math.round((part/total)*100) : 0; }
+
+let mesSeleccionado = ''; // '' = en vivo (6 grupos), o nombre exacto de pestaña archivada
+
+// ── Vista en vivo: fetch directo a los 6 grupos ────────────────────────────
+async function cargarEnVivo(){
+  const porGrupo = {};
+  let mesRef = '';
+  let gruposOk = 0;
+
+  for (const g of Object.keys(GRUPOS_URLS)) {
+    try {
+      const res = await fetch(GRUPOS_URLS[g] + '?t=' + Date.now(), { cache: 'no-store' });
+      const json = await res.json();
+      if(!json.ok) continue;
+      gruposOk++;
+      mesRef = json.mes || mesRef;
+      porGrupo[g] = json.publicadores;
+    } catch(err) {
+      console.warn('Grupo ' + g + ' no disponible', err);
+    }
+  }
+
+  if(gruposOk === 0){
+    document.getElementById('content').innerHTML = '<div class="section"><div class="loading" style="color:var(--red);">⚠ No se pudo cargar ningún grupo. Revisa tu conexión.</div></div>';
+    return;
+  }
+
+  let combinado = [];
+  Object.keys(porGrupo).forEach(g => {
+    porGrupo[g].forEach(p => combinado.push(Object.assign({grupo:g}, p)));
+  });
+
+  document.getElementById('headerSub').textContent = `${mesRef} · ${gruposOk}/6 grupos conectados`;
+  document.getElementById('fuenteTag').textContent = 'En vivo';
+  render(combinado, mesRef);
+}
+
+// ── Vista de un mes archivado: fetch al backend del informe unificado ─────
+async function cargarMesArchivado(mes){
+  try {
+    const params = mes ? ('?mes=' + encodeURIComponent(mes) + '&t=' + Date.now()) : ('?t=' + Date.now());
+    const res = await fetch(getUnifUrl() + params, { cache: 'no-store' });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'Error desconocido');
+
+    const combinado = json.datos.map(p => Object.assign({}, p, { grupo: String(p.grupo) }));
+    document.getElementById('headerSub').textContent = `${json.mesMostrado} · Archivo del informe unificado`;
+    document.getElementById('fuenteTag').textContent = 'Archivado';
+    render(combinado, json.mesMostrado);
+  } catch(err) {
+    document.getElementById('content').innerHTML = `<div class="section"><div class="loading" style="color:var(--red);">⚠ No se pudo cargar ese mes: ${err.message}</div></div>`;
+  }
+}
+
+// ── Cargar la lista de meses archivados (para el selector) ────────────────
+async function cargarListaMeses(){
+  const setupCard = document.getElementById('setupCard');
+  const selectorWrap = document.getElementById('mesSelectorWrap');
+  if(!getUnifUrl()){
+    setupCard.style.display = '';
+    selectorWrap.style.display = 'none';
+    return;
+  }
+  setupCard.style.display = 'none';
+  try {
+    const res = await fetch(getUnifUrl() + '?t=' + Date.now(), { cache: 'no-store' });
+    const json = await res.json();
+    if(!json.ok) return;
+    const select = document.getElementById('mesSelector');
+    select.innerHTML = '<option value="">En vivo (los 6 grupos)</option>' +
+      (json.meses || []).map(m => `<option value="${m}">${m}</option>`).join('');
+    selectorWrap.style.display = '';
+  } catch(err) {
+    console.warn('No se pudo cargar la lista de meses archivados', err);
+  }
+}
+
+document.getElementById('unifUrlSave').addEventListener('click', () => {
+  const v = document.getElementById('unifUrlInput').value;
+  if(v.trim()){ setUnifUrl(v); cargarListaMeses(); }
+});
+
+document.getElementById('mesSelector').addEventListener('change', (e) => {
+  mesSeleccionado = e.target.value;
+  if(mesSeleccionado){
+    document.getElementById('content').innerHTML = '<div class="section"><div class="loading"><div class="spinner"></div>Cargando ' + mesSeleccionado + '…</div></div>';
+    cargarMesArchivado(mesSeleccionado);
+  } else {
+    document.getElementById('content').innerHTML = '<div class="section"><div class="loading"><div class="spinner"></div>Cargando los 6 grupos…</div></div>';
+    cargarEnVivo();
+  }
+});
+
+async function cargarTodo(){
+  document.getElementById('content').innerHTML = '<div class="section"><div class="loading"><div class="spinner"></div>Cargando…</div></div>';
+  await cargarListaMeses();
+  if(mesSeleccionado){
+    cargarMesArchivado(mesSeleccionado);
+  } else {
+    cargarEnVivo();
+  }
+}
+
+function render(combinado, mesRef){
+  const total = combinado.length;
+  const gruposPresentes = [...new Set(combinado.map(p => String(p.grupo)))].sort();
+  const enviados = combinado.filter(p => p.enviado).length;
+  const participaronSi = combinado.filter(p => p.si === 'X' || p.si === true).length;
+  const horasTotales = combinado.reduce((s,p) => s + (parseFloat(p.horas)||0), 0);
+  const cursosTotales = combinado.reduce((s,p) => s + (parseFloat(p.cursos)||0), 0);
+  const auxiliares = combinado.filter(p => p.auxiliar === 'X').length;
+  const regulares  = combinado.filter(p => p.regular === 'X').length;
+  const especiales = combinado.filter(p => p.especial === 'X').length;
+  const precursoresTotal = auxiliares + regulares + especiales;
+
+  // Top horas
+  const topHoras = combinado
+    .filter(p => parseFloat(p.horas) > 0)
+    .sort((a,b) => parseFloat(b.horas) - parseFloat(a.horas))
+    .slice(0, 8);
+
+  // Pendientes por grupo (calculado directo del combinado)
+  const pendientesPorGrupo = {};
+  combinado.forEach(p => {
+    if(!p.enviado){
+      if(!pendientesPorGrupo[p.grupo]) pendientesPorGrupo[p.grupo] = [];
+      pendientesPorGrupo[p.grupo].push(p.nombre);
+    }
+  });
+
+  document.getElementById('content').innerHTML = `
+
+    <div class="section">
+      <div class="section-title">Resumen general</div>
+      <div class="progress-big">
+        <div class="progress-nums">${enviados} <span>/ ${total}</span></div>
+        <div class="bar-track-big"><div class="bar-fill-big" style="width:${pct(enviados,total)}%"></div></div>
+      </div>
+      <div class="progress-sub">${pct(enviados,total)}% de los publicadores ya enviaron su informe de ${mesRef} · ${gruposPresentes.length}/6 grupos con datos</div>
+
+      <div class="kpi-grid" style="margin-top:1.3rem;">
+        <div class="kpi"><div class="num">${total}</div><div class="lbl">Publicadores</div></div>
+        <div class="kpi accent"><div class="num">${enviados}</div><div class="lbl">Enviaron</div></div>
+        <div class="kpi"><div class="num">${participaronSi}</div><div class="lbl">Participaron</div></div>
+        <div class="kpi"><div class="num">${precursoresTotal}</div><div class="lbl">Precursores</div></div>
+        <div class="kpi"><div class="num">${horasTotales || 0}</div><div class="lbl">Horas</div></div>
+        <div class="kpi"><div class="num">${cursosTotales || 0}</div><div class="lbl">Cursos</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Participación por grupo</div>
+      <div class="grupo-bars">
+        ${[1,2,3,4,5,6].map(g => {
+          const pubs = combinado.filter(p => String(p.grupo) === String(g));
+          if(pubs.length === 0) return `<div class="gbar-row"><div class="gbar-label"><div class="gbar-num">${g}</div>Grupo ${g}</div><div class="gbar-track"></div><div class="gbar-val" style="color:var(--muted);">Sin datos</div></div>`;
+          const t = pubs.length;
+          const e = pubs.filter(p => p.enviado).length;
+          const p = pct(e,t);
+          return `<div class="gbar-row">
+            <div class="gbar-label"><div class="gbar-num">${g}</div>Grupo ${g}</div>
+            <div class="gbar-track"><div class="gbar-fill ${p<60?'low':''}" style="width:${p}%"></div></div>
+            <div class="gbar-val">${e}/${t} · ${p}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Precursores por tipo</div>
+      <div class="prec-grid">
+        <div class="prec-card"><div class="prec-icon">🟡</div><div class="prec-num">${auxiliares}</div><div class="prec-lbl">Auxiliares</div></div>
+        <div class="prec-card"><div class="prec-icon">🔵</div><div class="prec-num">${regulares}</div><div class="prec-lbl">Regulares</div></div>
+        <div class="prec-card"><div class="prec-icon">⭐</div><div class="prec-num">${especiales}</div><div class="prec-lbl">Especiales</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Top horas del mes</div>
+      ${topHoras.length === 0 ? '<div class="progress-sub">Todavía no hay horas registradas.</div>' : `
+      <div class="leader-list">
+        ${topHoras.map((p,i) => `
+          <div class="leader-row">
+            <div class="leader-rank">${i+1}</div>
+            <div class="leader-name">${p.nombre}</div>
+            <div class="leader-grupo">G${p.grupo}</div>
+            <div class="leader-horas">${p.horas} h</div>
+          </div>
+        `).join('')}
+      </div>`}
+    </div>
+
+    <div class="section">
+      <div class="section-title">Publicadores pendientes por grupo</div>
+      ${Object.keys(pendientesPorGrupo).length === 0 ? '<div class="all-done">✅ Todos los publicadores de los grupos conectados ya enviaron su informe.</div>' : `
+      <div class="pend-groups">
+        ${Object.keys(pendientesPorGrupo).sort().map(g => `
+          <div class="pend-row">
+            <div class="pend-badge">${g}</div>
+            <div class="pend-names"><b>Grupo ${g}</b> (${pendientesPorGrupo[g].length}): ${pendientesPorGrupo[g].join(', ')}</div>
+          </div>
+        `).join('')}
+      </div>`}
+    </div>
+
+    <div class="section">
+      <div class="section-title">Fichas de publicadores</div>
+      <div class="ficha-controls">
+        <input type="text" class="ficha-search" id="fichaSearch" placeholder="🔍 Buscar por nombre…">
+        <div class="ficha-filter" id="fichaFilterGrupo">
+          <button data-g="todos" class="active">Todos</button>
+          ${[1,2,3,4,5,6].map(g => `<button data-g="${g}">G${g}</button>`).join('')}
+        </div>
+        <div class="ficha-filter" id="fichaFilterEstado">
+          <button data-e="todos" class="active">Todos</button>
+          <button data-e="enviado">Enviaron</button>
+          <button data-e="pendiente">Pendientes</button>
+        </div>
+      </div>
+      <div class="ficha-count" id="fichaCount"></div>
+      <div class="ficha-grid" id="fichaGrid"></div>
+    </div>
+  `;
+
+  inicializarFichas(combinado);
+}
+
+function inicializarFichas(combinado){
+  let filtroGrupo = 'todos';
+  let filtroEstado = 'todos';
+  let busqueda = '';
+
+  function pintarFichas(){
+    const filtradas = combinado.filter(p => {
+      if(filtroGrupo !== 'todos' && String(p.grupo) !== filtroGrupo) return false;
+      if(filtroEstado === 'enviado' && !p.enviado) return false;
+      if(filtroEstado === 'pendiente' && p.enviado) return false;
+      if(busqueda && !p.nombre.toLowerCase().includes(busqueda.toLowerCase())) return false;
+      return true;
+    });
+
+    document.getElementById('fichaCount').textContent = `Mostrando ${filtradas.length} de ${combinado.length} publicadores`;
+
+    const grid = document.getElementById('fichaGrid');
+    if(filtradas.length === 0){
+      grid.innerHTML = '<div class="ficha-empty">No hay publicadores que coincidan con el filtro.</div>';
+      return;
+    }
+
+    grid.innerHTML = filtradas.map(p => {
+      const tipo = p.especial === 'X' ? '⭐ Especial' : p.regular === 'X' ? '🔵 Regular' : p.auxiliar === 'X' ? '🟡 Auxiliar' : '';
+      const participo = p.si === 'X' || p.si === true;
+      return `
+        <div class="ficha ${p.enviado ? 'enviado' : 'pendiente'}">
+          <div class="ficha-top">
+            <div class="ficha-nombre">${p.nombre}</div>
+            <div class="ficha-grupo-badge">G${p.grupo}</div>
+          </div>
+          <div class="ficha-estado ${p.enviado ? (participo ? 'si' : 'no') : 'no'}">
+            ${p.enviado ? (participo ? '✅ Participó' : '❌ No participó') : '⏳ Sin enviar'}
+          </div>
+          <div class="ficha-datos">
+            ${p.horas ? `<span class="ficha-chip">⏱ ${p.horas} h</span>` : ''}
+            ${p.cursos ? `<span class="ficha-chip">📖 ${p.cursos} curso(s)</span>` : ''}
+            ${tipo ? `<span class="ficha-chip tipo">${tipo}</span>` : ''}
+            ${p.fecha ? `<span class="ficha-chip">📅 ${p.fecha}</span>` : ''}
+          </div>
+          ${p.obs ? `<div class="ficha-obs">"${p.obs}"</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('fichaSearch').addEventListener('input', (e) => {
+    busqueda = e.target.value;
+    pintarFichas();
+  });
+  document.getElementById('fichaFilterGrupo').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    document.querySelectorAll('#fichaFilterGrupo button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroGrupo = btn.dataset.g;
+    pintarFichas();
+  });
+  document.getElementById('fichaFilterEstado').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    document.querySelectorAll('#fichaFilterEstado button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroEstado = btn.dataset.e;
+    pintarFichas();
+  });
+
+  pintarFichas();
+}
+
+document.getElementById('btnRefresh').addEventListener('click', cargarTodo);
+cargarTodo();
+</script>
+</body>
+</html>

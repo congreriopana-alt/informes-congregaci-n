@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe Unificado — Congregación</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d2340;--blue:#1a4a7a;--sky:#2e7fce;--gold:#c8963e;
+  --cream:#f7f3ed;--white:#ffffff;--ink:#1c1c1c;--border:#d1c9be;
+  --input-bg:#fdfbf8;--green:#0f7a3e;--red:#dc2626;--muted:#6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:100vh;padding:1.5rem 1rem 3rem;}
+.wrap{max-width:900px;margin:0 auto;}
+
+.header{background:var(--navy);border-radius:8px 8px 0 0;padding:1.6rem 2.2rem 1.3rem;color:#fff;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0,transparent 18px,rgba(255,255,255,.03) 18px,rgba(255,255,255,.03) 19px);}
+.header-badge{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(200,150,62,.4);padding:.25rem .75rem;border-radius:2px;margin-bottom:.8rem;}
+.header h1{font-family:'Playfair Display',serif;font-size:clamp(1.3rem,4vw,1.7rem);font-weight:900;letter-spacing:-.01em;}
+.header p{margin-top:.5rem;font-size:.88rem;color:rgba(255,255,255,.6);font-weight:300;}
+.stripe{height:4px;background:linear-gradient(90deg,var(--gold) 0%,var(--sky) 60%,var(--blue) 100%);}
+
+.card{background:var(--white);padding:1.5rem 2.2rem;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+.card:last-of-type{border-bottom:1px solid var(--border);border-radius:0 0 8px 8px;}
+
+.setup-banner{background:#fff8ec;border:1.5px solid var(--gold);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:.88rem;}
+.setup-banner strong{display:block;margin-bottom:.4rem;font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);}
+.setup-banner .row{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;}
+.setup-banner input{flex:1;min-width:220px;padding:.55rem .7rem;border:1px solid var(--border);border-radius:4px;font-size:.8rem;font-family:monospace;}
+.setup-banner button{background:var(--navy);color:#fff;border:none;border-radius:4px;padding:.55rem 1.1rem;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1.2rem;}
+.stat{background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;text-align:center;}
+.stat .num{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--navy);}
+.stat .lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:.15rem;}
+
+table{width:100%;border-collapse:collapse;font-size:.84rem;}
+th{text-align:left;padding:.5rem .6rem;background:var(--navy);color:#fff;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;}
+td{padding:.5rem .6rem;border-bottom:1px solid var(--border);}
+tr:nth-child(even) td{background:var(--input-bg);}
+.grupo-tag{display:inline-block;background:var(--sky);color:#fff;font-weight:700;font-size:.72rem;border-radius:4px;padding:.15rem .5rem;}
+.table-wrap{max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;}
+
+.btn-row{display:flex;gap:.8rem;align-items:center;margin-top:1.3rem;flex-wrap:wrap;}
+.btn{border:none;border-radius:5px;padding:.7rem 1.4rem;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .18s;}
+.btn:hover{opacity:.87;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-refresh{background:var(--sky);color:#fff;}
+.btn-upload{background:var(--green);color:#fff;}
+.status{font-size:.88rem;font-weight:600;}
+.status.ok{color:var(--green);}
+.status.err{color:var(--red);}
+.status a{color:var(--green);text-decoration:underline;}
+
+.loading{text-align:center;padding:2rem;color:var(--muted);}
+.spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .75rem;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.empty{color:var(--muted);text-align:center;padding:1.5rem;font-size:.88rem;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-badge">Congregación</div>
+    <h1>Informe Unificado de Predicación</h1>
+    <p>Combina automáticamente a los publicadores de los 6 grupos en una sola lista — y archiva el mes anterior solo cuando detecta que empezó uno nuevo</p>
+  </div>
+  <div class="stripe"></div>
+
+  <div class="card" id="setupCard" style="display:none;">
+    <div class="setup-banner">
+      <strong>Falta conectar el backend del informe unificado</strong>
+      Pega aquí la URL del Apps Script pegado dentro de tu Google Sheet <strong>GRUPOS 1-6 UNIDOS</strong> (el que llena esa hoja directamente, no crea una nueva).
+      <div class="row">
+        <input type="text" id="unifUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+        <button id="unifUrlSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stats-row" id="statsRow" style="display:none;">
+      <div class="stat"><div class="num" id="statTotal">—</div><div class="lbl">Publicadores</div></div>
+      <div class="stat"><div class="num" id="statEnviados">—</div><div class="lbl">Enviaron informe</div></div>
+      <div class="stat"><div class="num" id="statHoras">—</div><div class="lbl">Horas totales</div></div>
+      <div class="stat"><div class="num" id="statGrupos">—</div><div class="lbl">Grupos conectados</div></div>
+    </div>
+
+    <div id="tableArea">
+      <div class="loading"><div class="spinner"></div>Cargando los 6 grupos…</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-refresh" id="btnRefresh">🔄 Actualizar datos</button>
+      <button class="btn btn-upload" id="btnUpload">📤 Actualizar el informe unificado</button>
+      <span class="status" id="statusMsg"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// URLs de los backends de cada grupo (ya desplegadas)
+const GRUPOS_URLS = {
+  1: 'https://script.google.com/macros/s/AKfycbx8sK39lJ0EVV0skzoXDG4dfFoHf2M8RyW2kI3f0L0zwr8qNdQKxle_10r7HZ_elH-HAg/exec',
+  2: 'https://script.google.com/macros/s/AKfycbzLQ-xwdDUoBE0lm-2W3cxaK1NuJwSZZrPLqefDbiQd-ZcPca4vvY-RaLYx_PlAqRRoHQ/exec',
+  3: 'https://script.google.com/macros/s/AKfycbzRD9KVD4_N1HB6Fis5fTP_kie7tr7hInxJnnn8ogZoq-MD2YHhkMv_NCmXSby5tMe1/exec',
+  4: 'https://script.google.com/macros/s/AKfycbyZ7i77lZi8v6q1H_jrtiYssYb7IuxsTLcM9h60q3nu9G_P_TQUKUEw7D52YzrkzXHj/exec',
+  5: 'https://script.google.com/macros/s/AKfycbySDhJAM9XUfmpNCLtfaikf-sOSxWmbj-Vvlb_bKGny77W5Sse_jARFGFrR4vpTJaFaUw/exec',
+  6: 'https://script.google.com/macros/s/AKfycbzBkPDIz7YMKatcAMGmqEzw-HPS_6-mI8ChlUszNa4UNtWy9GsQNzNsGf81LLB7aSZD/exec'
+};
+
+const UNIF_KEY = 'informe_unificado_url';
+function getUnifUrl(){ return localStorage.getItem(UNIF_KEY) || ''; }
+function setUnifUrl(v){ localStorage.setItem(UNIF_KEY, v.trim()); }
+
+let combinado = [];
+let mesActual = '';
+let anioActual = new Date().getFullYear();
+let mesesPorGrupo = {}; // { 1: 'Julio', 2: 'Mayo', ... }
+
+function mostrarSetupSiFalta(){
+  const card = document.getElementById('setupCard');
+  if(getUnifUrl()){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('unifUrlSave').onclick = () => {
+    const v = document.getElementById('unifUrlInput').value;
+    if(v.trim()){ setUnifUrl(v); mostrarSetupSiFalta(); }
+  };
+}
+
+async function cargarTodo(){
+  document.getElementById('tableArea').innerHTML = '<div class="loading"><div class="spinner"></div>Cargando los 6 grupos…</div>';
+  document.getElementById('statsRow').style.display = 'none';
+  combinado = [];
+  let gruposOk = 0;
+
+  for (const g of Object.keys(GRUPOS_URLS)) {
+    try {
+      const res = await fetch(GRUPOS_URLS[g] + '?t=' + Date.now(), { cache: 'no-store' });
+      const json = await res.json();
+      if(!json.ok) continue;
+      gruposOk++;
+      mesActual = json.mes || mesActual;
+      mesesPorGrupo[g] = json.mes || '';
+      json.publicadores.forEach(p => {
+        combinado.push({
+          grupo: g,
+          nombre: p.nombre,
+          si: p.si || (p.enviado && p.si !== '' ? p.si : ''),
+          no: p.no || '',
+          cursos: p.cursos || '',
+          auxiliar: p.auxiliar || '',
+          regular: p.regular || '',
+          especial: p.especial || '',
+          horas: p.horas || '',
+          obs: p.obs || '',
+          fecha: p.fecha || '',
+          enviado: !!p.enviado
+        });
+      });
+    } catch(err) {
+      console.warn('No se pudo cargar grupo ' + g, err);
+    }
+  }
+
+  renderTabla(gruposOk);
+}
+
+function renderTabla(gruposOk){
+  const area = document.getElementById('tableArea');
+  if(combinado.length === 0){
+    area.innerHTML = '<div class="empty">No se pudo cargar ningún grupo. Revisa tu conexión.</div>';
+    return;
+  }
+
+  const total = combinado.length;
+  const enviados = combinado.filter(p => p.enviado).length;
+  const horas = combinado.reduce((s,p) => s + (parseFloat(p.horas)||0), 0);
+
+  document.getElementById('statsRow').style.display = '';
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statEnviados').textContent = enviados + '/' + total;
+  document.getElementById('statHoras').textContent = horas || '0';
+  document.getElementById('statGrupos').textContent = gruposOk + '/6';
+
+  area.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Grupo</th><th>Nombre</th><th>Participó</th><th>Horas</th><th>Tipo</th></tr></thead>
+        <tbody>
+          ${combinado.map(p => {
+            const tipo = p.especial === 'X' ? 'Especial' : p.regular === 'X' ? 'Regular' : p.auxiliar === 'X' ? 'Auxiliar' : '';
+            return `<tr>
+              <td><span class="grupo-tag">${p.grupo}</span></td>
+              <td>${p.nombre}</td>
+              <td>${p.enviado ? (p.si ? '✅ Sí' : '❌ No') : '⏳ Pendiente'}</td>
+              <td>${p.horas || ''}</td>
+              <td>${tipo}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+document.getElementById('btnRefresh').addEventListener('click', cargarTodo);
+
+document.getElementById('btnUpload').addEventListener('click', async () => {
+  const statusMsg = document.getElementById('statusMsg');
+  if(!getUnifUrl()){
+    mostrarSetupSiFalta();
+    statusMsg.textContent = 'Configura primero la URL del backend arriba.';
+    statusMsg.className = 'status err';
+    return;
+  }
+  if(combinado.length === 0){
+    statusMsg.textContent = 'No hay datos cargados todavía.';
+    statusMsg.className = 'status err';
+    return;
+  }
+
+  const btn = document.getElementById('btnUpload');
+  btn.disabled = true;
+  statusMsg.textContent = '⏳ Actualizando el informe unificado…';
+  statusMsg.className = 'status';
+
+  try {
+    const res = await fetch(getUnifUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ mes: mesActual, anio: anioActual, registros: combinado, mesesPorGrupo })
+    });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'Error desconocido');
+
+    let mensaje = `✅ Informe unificado actualizado (${json.actualizados} publicadores). <a href="${json.url}" target="_blank">Abrir Google Sheet →</a>`;
+    if(json.gruposFaltantes && json.gruposFaltantes.length > 0){
+      mensaje += ` <br><span style="color:var(--red);">⚠ No respondió el Grupo ${json.gruposFaltantes.join(', ')} — sus datos previos NO se tocaron, vuelve a actualizar en un momento.</span>`;
+    }
+    if(json.noEncontrados && json.noEncontrados.length > 0){
+      mensaje += ` <br><span style="color:var(--gold);">⚠ No se encontraron en la hoja: ${json.noEncontrados.join(', ')}</span>`;
+    }
+    statusMsg.innerHTML = mensaje;
+    statusMsg.className = 'status ok';
+  } catch(err) {
+    statusMsg.textContent = '✗ Error: ' + err.message;
+    statusMsg.className = 'status err';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+mostrarSetupSiFalta();
+cargarTodo();
+</script>
+</body>
+</html>
