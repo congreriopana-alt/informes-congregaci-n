@@ -536,7 +536,6 @@
   <!-- Header -->
   <div class="header">
     <div class="header-toolbar">
-      <button class="dark-toggle" onclick="toggleIdioma()" id="lang-btn">🌐 K'iche'</button>
       <button class="dark-toggle" onclick="toggleDark()" id="dark-btn">🌙 Oscuro</button>
     </div>
     <div class="mes-tag" id="mes-actual"></div>
@@ -798,8 +797,9 @@
     // Send button
     const btnS = document.getElementById('btn-sheets');
     if (btnS) btnS.textContent = t.btnEnviar;
-    // Lang button
-    document.getElementById('lang-btn').textContent = t.langBtn;
+    // Lang button (puede no existir si se quitó el selector de idioma)
+    const langBtn = document.getElementById('lang-btn');
+    if (langBtn) langBtn.textContent = t.langBtn;
     // Update mes tag (usa el mes confirmado por el backend si ya está disponible)
     const mesTag = document.getElementById('mes-actual');
     if (mesTag && typeof mesNombre !== 'undefined' && mesNombre) {
