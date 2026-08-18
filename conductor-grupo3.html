@@ -39,7 +39,7 @@ body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:1
 .login-error{color:var(--red);font-size:.82rem;margin-top:.5rem;display:none;}
 
 /* Dashboard */
-.dashboard{display:none;max-width:800px;margin:0 auto;}
+.dashboard{display:block;max-width:800px;margin:0 auto;}
 .dash-header{background:var(--navy);border-radius:8px 8px 0 0;padding:1.5rem 2rem;color:white;position:relative;}
 .dash-header h1{font-family:'Playfair Display',serif;font-size:1.5rem;}
 .dash-header p{font-size:.85rem;opacity:.6;margin-top:.3rem;}
@@ -114,8 +114,8 @@ body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:1
 </head>
 <body>
 
-<!-- Login -->
-<div class="login-wrap" id="login-wrap">
+<!-- Login (desactivado: ya no se pide contraseña) -->
+<div class="login-wrap" id="login-wrap" style="display:none;">
   <div class="login-box">
     <div style="font-size:2.5rem;margin-bottom:.75rem">🔐</div>
     <h2>Panel del Conductor</h2>
@@ -213,7 +213,7 @@ function toggleDark() {
   }
 })();
 
-// ── Login ──────────────────────────────────────────────────────
+// ── Login (ya no se usa, el panel carga directo) ────────────────
 function login() {
   if(document.getElementById('pwd-input').value === PASSWORD){
     document.getElementById('login-wrap').style.display='none';
@@ -224,6 +224,7 @@ function login() {
     document.getElementById('pwd-input').style.borderColor='#dc2626';
   }
 }
+document.addEventListener('DOMContentLoaded', cargarDatos);
 
 // ── Cargar datos ───────────────────────────────────────────────
 async function cargarDatos() {
