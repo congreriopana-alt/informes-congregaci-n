@@ -281,7 +281,7 @@ function getUnifUrl(){ return localStorage.getItem(UNIF_KEY) || ''; }
 function setUnifUrl(v){ localStorage.setItem(UNIF_KEY, v.trim()); }
 
 const ASIST_KEY = 'asistencia_reuniones_url';
-const ASIST_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbws2DsRV0lQd7Q1F3korZ8y_dybdFFdl9pfHrW2PpDc4aUn-QyqRsveWYH4cPkV3jtY/exec';
+const ASIST_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbws2DsRV0lQd7Q1F3korZ8y_dybdFFdI9pfHrW2PpDc4aUn-QyqRsveWYH4cPkV3jtY/exec';
 function getAsistUrl(){ return localStorage.getItem(ASIST_KEY) || ASIST_URL_DEFAULT; }
 function setAsistUrl(v){ localStorage.setItem(ASIST_KEY, v.trim()); }
 
@@ -386,20 +386,32 @@ async function cargarAsistencia(soloMes, anioRef){
   }
   document.getElementById('setupAsistenciaCard').style.display = 'none';
 
-  const MESES_NUM = {'Enero':'01','Febrero':'02','Marzo':'03','Abril':'04','Mayo':'05','Junio':'06','Julio':'07','Agosto':'08','Septiembre':'09','Octubre':'10','Noviembre':'11','Diciembre':'12'};
+  const MESES_NUM = {'Enero':0,'Febrero':1,'Marzo':2,'Abril':3,'Mayo':4,'Junio':5,'Julio':6,'Agosto':7,'Septiembre':8,'Octubre':9,'Noviembre':10,'Diciembre':11};
   const numMes = MESES_NUM[soloMes];
-  if(!numMes || !anioRef){ el.textContent = '— (mes no reconocido)'; return; }
-  const prefijo = `${anioRef}-${numMes}-`;
+  if(numMes === undefined || !anioRef){ el.textContent = '— (mes no reconocido)'; return; }
+
+  // El backend puede mandar la fecha como "2026-04-16" o como el texto
+  // completo de un objeto Date de Apps Script ("Thu Apr 16 2026 01:00:00
+  // GMT-0600 ..."). Esta función entiende ambos formatos.
+  function parseFechaAsistencia(fechaRaw){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(fechaRaw)){
+      return new Date(fechaRaw + 'T12:00:00-06:00'); // mediodía Guatemala, evita saltos de día
+    }
+    return new Date(fechaRaw); // ya trae su propio huso horario en el texto
+  }
 
   try {
     const res = await fetch(getAsistUrl() + '?action=read&t=' + Date.now(), { cache: 'no-store' });
     const json = await res.json();
     if(!json.ok){ el.textContent = '— (error al cargar)'; return; }
 
-    const delMes = (json.registros || []).filter(r => r.fecha.startsWith(prefijo));
+    const delMes = (json.registros || []).filter(r => {
+      const d = parseFechaAsistencia(r.fecha);
+      return !isNaN(d) && d.getUTCFullYear() === anioRef && d.getUTCMonth() === numMes;
+    });
     const sabados = delMes.filter(r => {
-      const d = new Date(r.fecha + 'T12:00:00');
-      return d.getDay() === 6; // 6 = sábado
+      const d = parseFechaAsistencia(r.fecha);
+      return d.getUTCDay() === 6; // 6 = sábado
     });
 
     if(sabados.length === 0){
