@@ -281,7 +281,8 @@ function getUnifUrl(){ return localStorage.getItem(UNIF_KEY) || ''; }
 function setUnifUrl(v){ localStorage.setItem(UNIF_KEY, v.trim()); }
 
 const ASIST_KEY = 'asistencia_reuniones_url';
-function getAsistUrl(){ return localStorage.getItem(ASIST_KEY) || ''; }
+const ASIST_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbws2DsRV0lQd7Q1F3korZ8y_dybdFFdl9pfHrW2PpDc4aUn-QyqRsveWYH4cPkV3jtY/exec';
+function getAsistUrl(){ return localStorage.getItem(ASIST_KEY) || ASIST_URL_DEFAULT; }
 function setAsistUrl(v){ localStorage.setItem(ASIST_KEY, v.trim()); }
 
 function pct(part, total){ return total>0 ? Math.round((part/total)*100) : 0; }
