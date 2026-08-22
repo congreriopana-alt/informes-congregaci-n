@@ -84,6 +84,20 @@ body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:1
 .prec-num{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--navy);}
 .prec-lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-top:.15rem;}
 
+/* ── Resumen Oficial (formato tipo informe de congregación) ── */
+.oficial-header{margin-bottom:1rem;}
+.oficial-eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);}
+.oficial-titulo{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--navy);margin-top:.15rem;}
+.oficial-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.9rem;}
+.oficial-card{border:1.5px solid var(--border);border-radius:10px;padding:1.1rem 1.2rem;background:#fff;}
+.oficial-card h4{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:.7rem;}
+.oficial-stat{margin-bottom:.65rem;}
+.oficial-stat:last-child{margin-bottom:0;}
+.oficial-stat-lbl{font-size:.78rem;color:var(--muted);}
+.oficial-stat-val{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--ink);}
+.oficial-pendiente{color:var(--muted);font-style:italic;font-size:.95rem;}
+.oficial-card.destacada{background:var(--input-bg);}
+
 /* ── Control de precursores (metas de horas) ── */
 .ctrl-controls{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;}
 .ctrl-controls button{border:1.5px solid var(--border);background:#fff;color:var(--muted);border-radius:20px;padding:.4rem .9rem;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;}
@@ -223,6 +237,17 @@ body{background:var(--cream);font-family:'Source Sans 3',sans-serif;min-height:1
     </div>
   </div>
 
+  <div class="section" id="setupAsistenciaCard" style="display:none;">
+    <div class="setup-banner">
+      <strong>Conecta la hoja de asistencia a las reuniones</strong>
+      Pega aquí la URL del Apps Script de tu hoja "Asistencia el Rio Panajachel", para que el promedio de asistencia del fin de semana se calcule solo.
+      <div class="row">
+        <input type="text" id="asistUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+        <button id="asistUrlSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="content">
     <div class="section">
       <div class="kpi-grid">
@@ -254,6 +279,10 @@ const GRUPOS_URLS = {
 const UNIF_KEY = 'informe_unificado_url';
 function getUnifUrl(){ return localStorage.getItem(UNIF_KEY) || ''; }
 function setUnifUrl(v){ localStorage.setItem(UNIF_KEY, v.trim()); }
+
+const ASIST_KEY = 'asistencia_reuniones_url';
+function getAsistUrl(){ return localStorage.getItem(ASIST_KEY) || ''; }
+function setAsistUrl(v){ localStorage.setItem(ASIST_KEY, v.trim()); }
 
 function pct(part, total){ return total>0 ? Math.round((part/total)*100) : 0; }
 
@@ -339,6 +368,52 @@ document.getElementById('unifUrlSave').addEventListener('click', () => {
   if(v.trim()){ setUnifUrl(v); cargarListaMeses(); }
 });
 
+// ── Asistencia a las reuniones (promedio de los sábados del mes visto) ────
+document.getElementById('asistUrlSave').addEventListener('click', () => {
+  const v = document.getElementById('asistUrlInput').value;
+  if(v.trim()){ setAsistUrl(v); document.getElementById('setupAsistenciaCard').style.display = 'none'; }
+});
+
+async function cargarAsistencia(soloMes, anioRef){
+  const el = document.getElementById('asistenciaValor');
+  if(!el) return; // el contenido aún no se ha pintado
+
+  if(!getAsistUrl()){
+    document.getElementById('setupAsistenciaCard').style.display = '';
+    el.textContent = '— (conecta la hoja de asistencia)';
+    return;
+  }
+  document.getElementById('setupAsistenciaCard').style.display = 'none';
+
+  const MESES_NUM = {'Enero':'01','Febrero':'02','Marzo':'03','Abril':'04','Mayo':'05','Junio':'06','Julio':'07','Agosto':'08','Septiembre':'09','Octubre':'10','Noviembre':'11','Diciembre':'12'};
+  const numMes = MESES_NUM[soloMes];
+  if(!numMes || !anioRef){ el.textContent = '— (mes no reconocido)'; return; }
+  const prefijo = `${anioRef}-${numMes}-`;
+
+  try {
+    const res = await fetch(getAsistUrl() + '?action=read&t=' + Date.now(), { cache: 'no-store' });
+    const json = await res.json();
+    if(!json.ok){ el.textContent = '— (error al cargar)'; return; }
+
+    const delMes = (json.registros || []).filter(r => r.fecha.startsWith(prefijo));
+    const sabados = delMes.filter(r => {
+      const d = new Date(r.fecha + 'T12:00:00');
+      return d.getDay() === 6; // 6 = sábado
+    });
+
+    if(sabados.length === 0){
+      el.innerHTML = `<span style="color:var(--muted);font-style:italic;font-size:.85rem;">Sin registros de fin de semana en ${soloMes}</span>`;
+      return;
+    }
+
+    const promedio = Math.round(sabados.reduce((s,r) => s + r.total, 0) / sabados.length);
+    el.innerHTML = `<span class="oficial-stat-val">${promedio}</span> <span style="font-size:.75rem;color:var(--muted);">(${sabados.length} reunión${sabados.length>1?'es':''} de fin de semana)</span>`;
+  } catch(err) {
+    el.textContent = '— (no se pudo conectar)';
+    console.warn('No se pudo cargar la asistencia', err);
+  }
+}
+
 document.getElementById('mesSelector').addEventListener('change', (e) => {
   mesSeleccionado = e.target.value;
   if(mesSeleccionado){
@@ -405,6 +480,15 @@ function render(combinado, mesRef, anioRef){
   const especiales = combinado.filter(p => p.especial === 'X').length;
   const precursoresTotal = auxiliares + regulares + especiales;
 
+  // Horas y cursos desglosados por tipo, para el Resumen Oficial
+  const sumaPor = (filtro, campo) => combinado.filter(filtro).reduce((s,p) => s + (parseFloat(p[campo])||0), 0);
+  const auxHoras = sumaPor(p => p.auxiliar === 'X', 'horas');
+  const auxCursos = sumaPor(p => p.auxiliar === 'X', 'cursos');
+  const regHoras = sumaPor(p => p.regular === 'X', 'horas');
+  const regCursos = sumaPor(p => p.regular === 'X', 'cursos');
+  const espHoras = sumaPor(p => p.especial === 'X', 'horas');
+  const espCursos = sumaPor(p => p.especial === 'X', 'cursos');
+
   // Top horas
   const topHoras = combinado
     .filter(p => parseFloat(p.horas) > 0)
@@ -421,6 +505,81 @@ function render(combinado, mesRef, anioRef){
   });
 
   document.getElementById('content').innerHTML = `
+
+    <div class="section">
+      <div class="oficial-header">
+        <div class="oficial-eyebrow">Predicación y asistencia a las reuniones</div>
+        <div class="oficial-titulo">${mesRef}</div>
+      </div>
+      <div class="oficial-grid">
+        <div class="oficial-card destacada">
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Todos los publicadores activos</div>
+            <div class="oficial-stat-val">${total}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Promedio de asistencia a las reuniones del fin de semana</div>
+            <div class="oficial-pendiente" id="asistenciaValor">Calculando…</div>
+          </div>
+        </div>
+        <div class="oficial-card">
+          <h4>Publicadores</h4>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cantidad de informes</div>
+            <div class="oficial-stat-val">${enviados}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cursos bíblicos</div>
+            <div class="oficial-stat-val">${cursosTotales || 0}</div>
+          </div>
+        </div>
+        <div class="oficial-card">
+          <h4>Precursores auxiliares</h4>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cantidad de informes</div>
+            <div class="oficial-stat-val">${auxiliares}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Horas</div>
+            <div class="oficial-stat-val">${auxHoras || 0}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cursos bíblicos</div>
+            <div class="oficial-stat-val">${auxCursos || 0}</div>
+          </div>
+        </div>
+        <div class="oficial-card">
+          <h4>Precursores regulares</h4>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cantidad de informes</div>
+            <div class="oficial-stat-val">${regulares}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Horas</div>
+            <div class="oficial-stat-val">${regHoras || 0}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cursos bíblicos</div>
+            <div class="oficial-stat-val">${regCursos || 0}</div>
+          </div>
+        </div>
+        <div class="oficial-card">
+          <h4>Precursores especiales</h4>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cantidad de informes</div>
+            <div class="oficial-stat-val">${especiales}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Horas</div>
+            <div class="oficial-stat-val">${espHoras || 0}</div>
+          </div>
+          <div class="oficial-stat">
+            <div class="oficial-stat-lbl">Cursos bíblicos</div>
+            <div class="oficial-stat-val">${espCursos || 0}</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="section">
       <div class="section-title">Resumen general</div>
@@ -552,6 +711,7 @@ function render(combinado, mesRef, anioRef){
   renderControlPrecursores(combinado, mesRef, anioRef);
   animarNumeros();
   animarAnillo(pct(enviados, total));
+  cargarAsistencia((mesRef || '').replace(/\s*\d{4}\s*$/, '').trim(), anioRef);
 }
 
 // ── Animación de números que suben desde 0 ──────────────────────────────
