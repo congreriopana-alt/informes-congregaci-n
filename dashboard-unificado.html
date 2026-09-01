@@ -486,7 +486,28 @@ async function cargarTodo(){
   }
 }
 
+// Detecta horas mencionadas en Observaciones (ej. "8 horas de actividades
+// aprobadas") y las suma al total de Horas de esa persona. Deja registrado
+// de dónde salió el ajuste (horasBase + horasExtra + horasNota) para poder
+// mostrar la nota junto al total, sin esconder nada.
+function ajustarHorasPorObservaciones(combinado){
+  const patronHoras = /(\d+(?:[.,]\d+)?)\s*horas?\b/i;
+  combinado.forEach(p => {
+    const base = parseFloat(p.horas) || 0;
+    const obs = (p.obs || '').toString().trim();
+    const match = patronHoras.exec(obs);
+    const extra = match ? parseFloat(match[1].replace(',', '.')) : 0;
+
+    p.horasBase = base;
+    p.horasExtra = extra;
+    p.horasNota = extra > 0 ? obs : '';
+    p.horas = (base + extra).toString(); // se sobreescribe: todo lo que ya suma p.horas queda correcto sin tocar el resto del código
+  });
+  return combinado;
+}
+
 function render(combinado, mesRef, anioRef){
+  combinado = ajustarHorasPorObservaciones(combinado);
   const total = combinado.length;
   const gruposPresentes = [...new Set(combinado.map(p => String(p.grupo)))].sort();
   const enviados = combinado.filter(p => p.enviado).length;
@@ -961,12 +982,12 @@ function inicializarFichas(combinado){
             ${p.enviado ? (participo ? '✅ Participó' : '❌ No participó') : '⏳ Sin enviar'}
           </div>
           <div class="ficha-datos">
-            ${p.horas ? `<span class="ficha-chip">⏱ ${p.horas} h</span>` : ''}
+            ${p.horas ? `<span class="ficha-chip">⏱ ${p.horas} h${p.horasExtra > 0 ? ` <span style="color:var(--gold);font-weight:700;">(${p.horasBase}+${p.horasExtra})</span>` : ''}</span>` : ''}
             ${p.cursos ? `<span class="ficha-chip">📖 ${p.cursos} curso(s)</span>` : ''}
             ${tipo ? `<span class="ficha-chip tipo">${tipo}</span>` : ''}
             ${p.fecha ? `<span class="ficha-chip">📅 ${p.fecha}</span>` : ''}
           </div>
-          ${p.obs ? `<div class="ficha-obs">"${p.obs}"</div>` : ''}
+          ${p.obs ? `<div class="ficha-obs">${p.horasExtra > 0 ? '⏱ ' : ''}"${p.obs}"</div>` : ''}
         </div>
       `;
     }).join('');
