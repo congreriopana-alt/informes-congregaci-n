@@ -487,9 +487,9 @@ async function cargarTodo(){
 }
 
 // Detecta horas mencionadas en Observaciones (ej. "8 horas de actividades
-// aprobadas") y las suma al total de Horas de esa persona. Deja registrado
-// de dónde salió el ajuste (horasBase + horasExtra + horasNota) para poder
-// mostrar la nota junto al total, sin esconder nada.
+// aprobadas") y las deja marcadas como NOTA — ya NO se suman al total de
+// Horas (p.horas queda igual a como llegó de la hoja). Solo sirve para
+// mostrar un aviso junto al publicador.
 function ajustarHorasPorObservaciones(combinado){
   const patronHoras = /(\d+(?:[.,]\d+)?)\s*horas?\b/i;
   combinado.forEach(p => {
@@ -501,7 +501,7 @@ function ajustarHorasPorObservaciones(combinado){
     p.horasBase = base;
     p.horasExtra = extra;
     p.horasNota = extra > 0 ? obs : '';
-    p.horas = (base + extra).toString(); // se sobreescribe: todo lo que ya suma p.horas queda correcto sin tocar el resto del código
+    // p.horas NO se toca — se deja tal cual llegó, sin sumar la nota.
   });
   return combinado;
 }
@@ -982,12 +982,13 @@ function inicializarFichas(combinado){
             ${p.enviado ? (participo ? '✅ Participó' : '❌ No participó') : '⏳ Sin enviar'}
           </div>
           <div class="ficha-datos">
-            ${p.horas ? `<span class="ficha-chip">⏱ ${p.horas} h${p.horasExtra > 0 ? ` <span style="color:var(--gold);font-weight:700;">(${p.horasBase}+${p.horasExtra})</span>` : ''}</span>` : ''}
+            ${p.horas ? `<span class="ficha-chip">⏱ ${p.horas} h</span>` : ''}
             ${p.cursos ? `<span class="ficha-chip">📖 ${p.cursos} curso(s)</span>` : ''}
             ${tipo ? `<span class="ficha-chip tipo">${tipo}</span>` : ''}
             ${p.fecha ? `<span class="ficha-chip">📅 ${p.fecha}</span>` : ''}
           </div>
-          ${p.obs ? `<div class="ficha-obs">${p.horasExtra > 0 ? '⏱ ' : ''}"${p.obs}"</div>` : ''}
+          ${p.horasExtra > 0 ? `<div class="ficha-obs" style="color:var(--gold);font-weight:600;">📝 Nota: menciona ${p.horasExtra} hora${p.horasExtra>1?'s':''} extra — no sumadas al total</div>` : ''}
+          ${p.obs ? `<div class="ficha-obs">"${p.obs}"</div>` : ''}
         </div>
       `;
     }).join('');

@@ -306,7 +306,7 @@ function ajustarHorasPorObservaciones(publicadores){
 
     p.horasBase = base;
     p.horasExtra = extra;
-    p.horas = (base + extra).toString();
+    // p.horas ya NO se modifica — se deja tal cual, solo queda la nota.
   });
   return publicadores;
 }
@@ -368,7 +368,8 @@ function renderDatos(publicadores, mes) {
       <div style="flex:1">
         <div class="name-text">${p.nombre}</div>
         ${p.enviado && p.fecha  ? `<div class="name-time">📅 ${p.fecha}</div>`  : ''}
-        ${p.enviado && p.horas  ? `<div class="name-time">⏱ ${p.horas} h${p.horasExtra > 0 ? ` <span style="color:#c8963e;font-weight:700;">(${p.horasBase}+${p.horasExtra} nota)</span>` : ''}</div>` : ''}
+        ${p.enviado && p.horas  ? `<div class="name-time">⏱ ${p.horas} h</div>` : ''}
+        ${p.enviado && p.horasExtra > 0 ? `<div class="name-time" style="color:#c8963e;font-weight:600;">📝 Nota: menciona ${p.horasExtra} hora${p.horasExtra>1?'s':''} extra — no sumadas</div>` : ''}
         ${p.enviado && p.horasExtra > 0 && p.obs ? `<div class="name-time" style="font-style:italic;">"${p.obs}"</div>` : ''}
       
       </div>
