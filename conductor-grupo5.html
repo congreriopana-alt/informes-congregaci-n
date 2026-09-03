@@ -237,18 +237,49 @@ function login() {
 document.addEventListener('DOMContentLoaded', cargarDatos);
 
 // ── Cargar datos ───────────────────────────────────────────────
+// ── Caché local: guarda la última carga exitosa para poder verla sin
+//    internet (se guarda en este celular/PC, no en ningún servidor). ─────
+const CACHE_KEY_COND = 'conductor_cache_grupo5';
+
+function guardarCacheConductor(mes, publicadores, historial){
+  try {
+    localStorage.setItem(CACHE_KEY_COND, JSON.stringify({
+      mes: mes, publicadores: publicadores, historial: historial, guardado: Date.now()
+    }));
+  } catch(err) { console.warn('No se pudo guardar la caché local', err); }
+}
+
+function leerCacheConductor(){
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_COND);
+    return raw ? JSON.parse(raw) : null;
+  } catch(err) { return null; }
+}
+
+function formatoAntiguedadConductor(timestampMs){
+  const minutos = Math.round((Date.now() - timestampMs) / 60000);
+  if(minutos < 1) return 'hace un momento';
+  if(minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.round(minutos / 60);
+  if(horas < 24) return `hace ${horas} h`;
+  const dias = Math.round(horas / 24);
+  return `hace ${dias} día${dias>1?'s':''}`;
+}
+
 async function cargarDatos() {
   document.getElementById('name-grid').innerHTML=
     '<div class="loading"><div class="spinner"></div>Cargando informes…</div>';
 
   try {
-    const res  = await fetch(SHEETS_URL + '?action=status');
+    const res  = await fetch(SHEETS_URL + '?action=status&t=' + Date.now(), { cache: 'no-store' });
     const json = await res.json();
     if(!json.ok) throw new Error(json.error || 'Error');
 
     const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     mesActual = json.mes || meses[new Date().getMonth()];
+
+    guardarCacheConductor(mesActual, json.publicadores, json.historial || []);
 
     // ── Tabs de historial ──
     renderTabs(json.historial || [], mesActual);
@@ -261,6 +292,18 @@ async function cargarDatos() {
       'Actualizado: ' + new Date().toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'});
 
   } catch(err) {
+    // Sin conexión (o el backend falló) — mostramos la última versión guardada.
+    const cache = leerCacheConductor();
+    if(cache){
+      mesActual = cache.mes;
+      datosActuales = cache.publicadores;
+      renderTabs(cache.historial || [], cache.mes);
+      renderDatos(cache.publicadores, cache.mes);
+      document.getElementById('last-update').innerHTML =
+        `📴 Sin conexión — mostrando datos guardados ${formatoAntiguedadConductor(cache.guardado)}`;
+      document.getElementById('last-update').style.color = '#dc2626';
+      return;
+    }
     document.getElementById('name-grid').innerHTML=
       `<div class="loading" style="color:#dc2626">⚠ ${err.message}</div>`;
   }

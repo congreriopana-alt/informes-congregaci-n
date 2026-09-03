@@ -300,6 +300,36 @@ function pct(part, total){ return total>0 ? Math.round((part/total)*100) : 0; }
 let mesSeleccionado = ''; // '' = en vivo (6 grupos), o nombre exacto de pestaña archivada
 
 // ── Vista en vivo: fetch directo a los 6 grupos ────────────────────────────
+// ── Caché local: guarda la última carga exitosa para poder verla sin
+//    internet. Se guarda en el propio celular/PC (localStorage), no en
+//    ningún servidor. ─────────────────────────────────────────────────────
+const CACHE_KEY = 'dashboard_cache_v1';
+
+function guardarCache(combinado, mesRef, anioRef){
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      combinado: combinado, mesRef: mesRef, anioRef: anioRef, guardado: Date.now()
+    }));
+  } catch(err) { console.warn('No se pudo guardar la caché local', err); }
+}
+
+function leerCache(){
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(err) { return null; }
+}
+
+function formatoAntiguedad(timestampMs){
+  const minutos = Math.round((Date.now() - timestampMs) / 60000);
+  if(minutos < 1) return 'hace un momento';
+  if(minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.round(minutos / 60);
+  if(horas < 24) return `hace ${horas} h`;
+  const dias = Math.round(horas / 24);
+  return `hace ${dias} día${dias>1?'s':''}`;
+}
+
 async function cargarEnVivo(){
   const porGrupo = {};
   let mesRef = '';
@@ -326,7 +356,16 @@ async function cargarEnVivo(){
   });
 
   if(gruposOk === 0){
-    document.getElementById('content').innerHTML = '<div class="section"><div class="loading" style="color:var(--red);">⚠ No se pudo cargar ningún grupo. Revisa tu conexión.</div></div>';
+    // Sin conexión (o los 6 fallaron) — mostramos la última versión guardada.
+    const cache = leerCache();
+    if(cache){
+      document.getElementById('headerSub').textContent = `${cache.mesRef} · sin conexión (guardado ${formatoAntiguedad(cache.guardado)})`;
+      document.getElementById('fuenteTag').textContent = '📴 Sin conexión';
+      document.getElementById('fuenteTag').style.background = 'var(--red)';
+      render(cache.combinado, cache.mesRef, cache.anioRef);
+      return;
+    }
+    document.getElementById('content').innerHTML = '<div class="section"><div class="loading" style="color:var(--red);">⚠ No se pudo cargar ningún grupo, y no hay datos guardados de una carga anterior. Revisa tu conexión.</div></div>';
     return;
   }
 
@@ -335,9 +374,13 @@ async function cargarEnVivo(){
     porGrupo[g].forEach(p => combinado.push(Object.assign({grupo:g}, p)));
   });
 
+  const anioActual = new Date().getFullYear();
+  guardarCache(combinado, mesRef, anioActual);
+
   document.getElementById('headerSub').textContent = `${mesRef} · ${gruposOk}/6 grupos conectados`;
   document.getElementById('fuenteTag').textContent = 'En vivo';
-  render(combinado, mesRef, new Date().getFullYear());
+  document.getElementById('fuenteTag').style.background = '';
+  render(combinado, mesRef, anioActual);
 }
 
 // ── Vista de un mes archivado: fetch al backend del informe unificado ─────
@@ -910,31 +953,31 @@ function renderControlPrecursores(combinado, mesRef, anioRef){
 async function cargarAnualRegulares(regulares, anioServicio, mesActualNombre, anioActual){
   if(regulares.length === 0) return;
 
-  // Sumamos el acumulado de cada Regular a lo largo de los meses del año de
-  // servicio, trayendo cada mes archivado (excepto el actual, que ya lo
-  // tenemos en "combinado" y no hace falta volver a pedirlo).
+  // El mes actual ya lo tenemos en "combinado" (no hace falta pedirlo).
   const acumulado = {}; // "grupo|nombre" -> horas acumuladas
   regulares.forEach(p => { acumulado[p.grupo + '|' + p.nombre] = parseFloat(p.horas) || 0; });
 
   const mesesAConsultar = anioServicio.meses.filter(m => !(m.mes === mesActualNombre && m.anio === anioActual));
 
-  // También en paralelo — antes traía cada mes archivado uno por uno.
-  await Promise.allSettled(mesesAConsultar.map(async (m) => {
-    try {
-      const etiqueta = `${m.mes} ${m.anio}`;
-      const res = await fetch(getUnifUrl() + '?mes=' + encodeURIComponent(etiqueta) + '&t=' + Date.now(), { cache: 'no-store' });
+  // UNA sola llamada al backend para TODO el año — antes se pedía mes por
+  // mes (hasta 11 peticiones), y aunque el navegador las mandaba en
+  // paralelo, Apps Script las procesaba una por una del otro lado (por
+  // eso tardaba tanto). Ahora el propio backend suma los meses en una
+  // sola ejecución.
+  try {
+    const listaMeses = mesesAConsultar.map(m => `${m.mes} ${m.anio}`).join(',');
+    if(listaMeses){
+      const res = await fetch(getUnifUrl() + '?accion=anual&meses=' + encodeURIComponent(listaMeses) + '&t=' + Date.now(), { cache: 'no-store' });
       const json = await res.json();
-      if(!json.ok || !json.datos) return;
-      json.datos.forEach(p => {
-        const clave = p.grupo + '|' + p.nombre;
-        if(clave in acumulado){
-          acumulado[clave] += parseFloat(p.horas) || 0;
-        }
-      });
-    } catch(err) {
-      console.warn('No se pudo leer el mes archivado para el acumulado anual', err);
+      if(json.ok && json.acumulado){
+        Object.keys(acumulado).forEach(clave => {
+          acumulado[clave] += json.acumulado[clave] || 0;
+        });
+      }
     }
-  }));
+  } catch(err) {
+    console.warn('No se pudo leer el acumulado anual', err);
+  }
 
   regulares.forEach(p => {
     const clave = p.grupo + '|' + p.nombre;
