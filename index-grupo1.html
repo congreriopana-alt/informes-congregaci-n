@@ -839,11 +839,7 @@
   document.getElementById('nombre').addEventListener('change', function() {
     const clave = `enviado_${this.value}_${mesNombre}_${anio}`;
     const banner = document.getElementById('ya-enviado');
-    if (localStorage.getItem(clave)) {
-      banner.style.display = 'block';
-    } else {
-      banner.style.display = 'none';
-    }
+    banner.style.display = 'none'; // envío libre: sin bloqueo por duplicado
     actualizarAvatar(this.value);
     actualizarProgreso();
   });
@@ -1041,13 +1037,6 @@
 
     if (!valido) return;
 
-    // ── Anti-duplicado ────────────────────────────────────────
-    const claveEnvio = `enviado_${nombre}_${mesNombre}_${anio}`;
-    if (localStorage.getItem(claveEnvio)) {
-      document.getElementById('ya-enviado').style.display = 'block';
-      toast(idiomas[idiomaActual].yaEnviadoAlert, false);
-      return;
-    }
 
     const precursor = document.querySelector('input[name="precursor"]:checked');
     const cursos = document.getElementById('cursos').value;
@@ -1079,9 +1068,6 @@
     try {
       const tratamiento = esHermana(nombre) ? idiomas[idiomaActual].hermana : idiomas[idiomaActual].hermano;
       const primerNombre = nombre.split(',')[1]?.trim().split(' ')[0] || nombre.split(',')[0];
-
-      // Guardar en localStorage ANTES de enviar
-      localStorage.setItem(claveEnvio, '1');
 
       fetch(SHEETS_URL, {
         method: 'POST',
